@@ -13,7 +13,7 @@
 <div class="project-container">
     <div class="project-card">
         <div class="project-card-header">
-            <a href="/users/{{ project.owner.id }}">
+            <a href="/users/{{ project.owner.id }}/">
                 <div class="project-card-header-left">
                     {% if project.owner.avatar %}
                         <img src="{{ project.owner.avatar.url }}" alt="Аватар автора" class="project-author-avatar">
@@ -26,7 +26,15 @@
                     </div>
                 </div>
             </a>
-            <div class="project-card-header-right">
+            <div class="project-card-header-right" style="display:flex;gap:12px;align-items:center;">
+                {% if request.user.is_authenticated %}
+                <button class="project-fav-icon {% if project in request.user.favorites.all %}favorite{% else %}not-favorite{% endif %}"
+                        data-project-id="{{ project.id }}"
+                        data-fav="{% if project in request.user.favorites.all %}true{% else %}false{% endif %}"
+                        title="Добавить в избранное">
+                    {% include 'includes/svg/heart.html' %}
+                </button>
+                {% endif %}
                 <span class="project-status-black">
                     {% if project.status == "open" %}
                         Открыт
@@ -57,7 +65,7 @@
                 {% include 'includes/svg/share.html' %}
             </a>
             {% if user.id == project.owner.id %}
-                <a href="/projects/{{ project.id }}/edit" class="black-button">
+                <a href="/projects/{{ project.id }}/edit/" class="black-button">
                     {% include 'includes/svg/pen.html' %}
                     Редактировать
                 </a>
@@ -87,7 +95,7 @@
 
     <div class="project-skills">
         <h3>Необходимые навыки</h3>
-        <div id="skills-container" class="skills-container" data-project-id="{{ project.id }}">
+        <div id="skills-container" class="skills-container" data-project-id="{{ project.id }}" data-search-url="/projects/skills/" data-add-url="/projects/{{ project.id }}/skills/add/" data-remove-url-template="/projects/{{ project.id }}/skills/__ID__/remove/">
             {% for skill in project.skills.all %}
                 <span class="skill-chip" data-id="{{ skill.id }}">
                     {{ skill.name }}
@@ -113,7 +121,7 @@
     <h3>Участники проекта (<span id="participants-count" style="display:inline">{{ project.participants.all|length }}</span>)</h3>
     <div id="participants-list" class="participants-list">
         {% for member in project.participants.all %}
-        <a href="/users/{{ member.id }}" id="participant-{{ member.id }}">
+        <a href="/users/{{ member.id }}/" id="participant-{{ member.id }}">
             <div class="participant-item">
                 {% if member.avatar %}
                     <img src="{{ member.avatar.url }}" alt="Аватар" class="participant-avatar">
@@ -134,5 +142,6 @@
         </div>
     </div>
 </div>
+{% include 'includes/project-fav-toggle.js' %}
 {% endblock %}
 {% endwith %}
