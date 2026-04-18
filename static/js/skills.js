@@ -3,16 +3,18 @@
     const container = document.getElementById("skills-container");
     if (!container) return;
 
-    const searchUrl = container.dataset.searchUrl || "/projects/skills/";
-    const addUrl = container.dataset.addUrl || `/projects/${container.dataset.projectId}/skills/add/`;
-    const removeUrlTemplate = container.dataset.removeUrlTemplate || `/projects/${container.dataset.projectId}/skills/__ID__/remove/`;
+    const searchUrl = container.dataset.searchUrl;
+    const addUrl = container.dataset.addUrl;
+    const removeUrlTemplate = container.dataset.removeUrlTemplate;
 
     const addBtn = document.getElementById("add-skill-btn");
     const inputWrapper = document.getElementById("skill-input-wrapper");
     const input = document.getElementById("skill-input");
     const suggestions = document.getElementById("skill-suggestions");
 
-    if (!addBtn || !inputWrapper || !input || !suggestions) return;
+    if (!searchUrl || !addUrl || !removeUrlTemplate || !addBtn || !inputWrapper || !input || !suggestions) {
+      return;
+    }
 
     addBtn.addEventListener("click", () => {
       addBtn.classList.add("hidden");
@@ -33,29 +35,33 @@
         return;
       }
       timeoutId = setTimeout(async () => {
-        const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`);
-        if (!response.ok) return;
-        const data = await response.json();
+        try {
+          const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`);
+          if (!response.ok) return;
+          const data = await response.json();
 
-        suggestions.innerHTML = "";
-        data.forEach((skill) => {
-          const li = document.createElement("li");
-          li.textContent = skill.name;
-          li.dataset.id = skill.id;
-          li.className = "suggestion-item";
-          suggestions.appendChild(li);
-        });
+          suggestions.innerHTML = "";
+          data.forEach((skill) => {
+            const li = document.createElement("li");
+            li.textContent = skill.name;
+            li.dataset.id = skill.id;
+            li.className = "suggestion-item";
+            suggestions.appendChild(li);
+          });
 
-        const exact = data.some((skill) => skill.name.toLowerCase() === query.toLowerCase());
-        if (!exact) {
-          const liNew = document.createElement("li");
-          liNew.textContent = `Создать «${query}»`;
-          liNew.dataset.name = query;
-          liNew.className = "create-new";
-          suggestions.appendChild(liNew);
+          const exact = data.some((skill) => skill.name.toLowerCase() === query.toLowerCase());
+          if (!exact) {
+            const liNew = document.createElement("li");
+            liNew.textContent = `Создать «${query}»`;
+            liNew.dataset.name = query;
+            liNew.className = "create-new";
+            suggestions.appendChild(liNew);
+          }
+
+          suggestions.classList.remove("hidden");
+        } catch (error) {
+          console.error("Ошибка поиска навыков:", error);
         }
-
-        suggestions.classList.remove("hidden");
       }, 200);
     });
 
@@ -64,9 +70,9 @@
       if (!li) return;
 
       if (li.classList.contains("create-new")) {
-        await addSkillByName(li.dataset.name);
+        await addSkillByPayload({ name: li.dataset.name });
       } else if (li.dataset.id) {
-        await addSkillById(li.dataset.id);
+        await addSkillByPayload({ skill_id: li.dataset.id });
       }
       hideInput();
     });
@@ -79,9 +85,9 @@
 
         const first = suggestions.querySelector("li");
         if (first && first.dataset.id) {
-          await addSkillById(first.dataset.id);
+          await addSkillByPayload({ skill_id: first.dataset.id });
         } else {
-          await addSkillByName(query);
+          await addSkillByPayload({ name: query });
         }
         hideInput();
       }
@@ -99,53 +105,51 @@
     }
 
     container.addEventListener("click", async (e) => {
-      if (e.target.classList.contains("remove-skill-btn")) {
-        const chip = e.target.closest(".skill-chip");
-        const skillId = chip.dataset.id;
-        const response = await fetch(removeUrlTemplate.replace("__ID__", skillId), {
-          method: "POST",
-          headers: { "X-CSRFToken": getCookie("csrftoken") }
-        });
-        if (response.ok) {
-          chip.remove();
-          if (!container.querySelector('.skill-chip')) {
-            const empty = document.createElement('span');
-            empty.className = 'skill-empty';
-            empty.textContent = 'Навыки не указаны';
-            container.insertBefore(empty, addBtn);
-          }
-        }
+      if (!e.target.classList.contains("remove-skill-btn")) {
+        return;
       }
+
+      const chip = e.target.closest(".skill-chip");
+      if (!chip) return;
+      const skillId = chip.dataset.id;
+      const response = await fetch(removeUrlTemplate.replace("__ID__", skillId), {
+        method: "POST",
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+      });
+      const data = await response.json();
+      if (!response.ok || data.status !== "ok") {
+        const message = data.message || "Не удалось удалить навык";
+        if (window.toast) window.toast(message, { type: "error" });
+        return;
+      }
+
+      chip.remove();
+      if (!container.querySelector('.skill-chip')) {
+        const empty = document.createElement('span');
+        empty.className = 'skill-empty';
+        empty.textContent = 'Навыки не указаны';
+        container.insertBefore(empty, addBtn);
+      }
+      if (window.toast) window.toast(data.message || "Навык удалён", { type: "info" });
     });
 
-    async function addSkillById(skillId) {
+    async function addSkillByPayload(payload) {
       const response = await fetch(addUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCookie("csrftoken"),
         },
-        body: JSON.stringify({ skill_id: skillId }),
+        body: JSON.stringify(payload),
       });
-      if (response.ok) {
-        const skill = await response.json();
-        appendChip(skill.id, skill.name);
+      const data = await response.json();
+      if (!response.ok || data.status === "error") {
+        const message = data.message || "Не удалось добавить навык";
+        if (window.toast) window.toast(message, { type: "error" });
+        return;
       }
-    }
-
-    async function addSkillByName(name) {
-      const response = await fetch(addUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify({ name }),
-      });
-      if (response.ok) {
-        const skill = await response.json();
-        appendChip(skill.id, skill.name);
-      }
+      appendChip(data.id, data.name);
+      if (window.toast) window.toast(data.message || "Навык добавлен", { type: "info" });
     }
 
     function appendChip(id, name) {

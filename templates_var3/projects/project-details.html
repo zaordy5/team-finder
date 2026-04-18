@@ -31,6 +31,7 @@
                 <button class="project-fav-icon {% if project in request.user.favorites.all %}favorite{% else %}not-favorite{% endif %}"
                         data-project-id="{{ project.id }}"
                         data-fav="{% if project in request.user.favorites.all %}true{% else %}false{% endif %}"
+                        data-toggle-url="{% url 'projects:toggle_favorite' project.id %}"
                         title="Добавить в избранное">
                     {% include 'includes/svg/heart.html' %}
                 </button>
@@ -54,14 +55,12 @@
                 {% if project.github_url %}
                 <p class="project-link">
                     {% include 'includes/svg/github.html' %}
-                    <a href="{{ project.github_url }}" target="_blank">Репозиторий на GitHub</a>
+                    <a href="{{ project.github_url }}" target="_blank" rel="noopener noreferrer">Репозиторий на GitHub</a>
                 </p>
                 {% endif %}
         </div>
         <div class="project-actions">
-            <a href="#"
-               class="black-button black-button-share share-button"
-               data-url="{% url 'projects:detail' project.id %}">
+            <a href="#" class="black-button black-button-share share-button" data-url="{% url 'projects:detail' project.id %}">
                 {% include 'includes/svg/share.html' %}
             </a>
             {% if user.id == project.owner.id %}
@@ -70,18 +69,23 @@
                     Редактировать
                 </a>
                 {% if project.status == "open" %}
-                    <button class="black-button" id="complete-project-btn" data-id="{{ project.id }}">
+                    <button class="black-button"
+                            id="complete-project-btn"
+                            data-id="{{ project.id }}"
+                            data-action-url="{% url 'projects:complete' project.id %}">
                         Завершить проект
                     </button>
                 {% endif %}
             {% else %}
                 {% if user.is_authenticated %}
-                    <button id="participate-btn" class="black-button"
+                    <button id="participate-btn"
+                            class="black-button"
                             data-project="{{ project.id }}"
                             data-user-id="{{ request.user.id }}"
                             data-user-name="{{ request.user.name }} {{ request.user.surname }}"
                             data-user-avatar="{% if request.user.avatar %}{{ request.user.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}"
-                    >
+                            data-user-url="{% url 'users:detail' request.user.id %}"
+                            data-action-url="{% url 'projects:toggle_participation' project.id %}">
                         {% if request.user in project.participants.all %}
                             Отказаться от участия
                         {% else %}
@@ -95,7 +99,12 @@
 
     <div class="project-skills">
         <h3>Необходимые навыки</h3>
-        <div id="skills-container" class="skills-container" data-project-id="{{ project.id }}" data-search-url="/projects/skills/" data-add-url="{% url 'projects:detail' project.id %}skills/add/" data-remove-url-template="{% url 'projects:detail' project.id %}skills/__ID__/remove/">
+        <div id="skills-container"
+             class="skills-container"
+             data-project-id="{{ project.id }}"
+             data-search-url="{% url 'projects:skill_lookup' %}"
+             data-add-url="{% url 'projects:add_skill' project.id %}"
+             data-remove-url-template="{% url 'projects:detail' project.id %}skills/__ID__/remove/">
             {% for skill in project.skills.all %}
                 <span class="skill-chip" data-id="{{ skill.id }}">
                     {{ skill.name }}

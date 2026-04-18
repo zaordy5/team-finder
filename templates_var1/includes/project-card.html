@@ -19,6 +19,7 @@
                     class="project-fav-icon {% if project in user.favorites.all %}favorite{% else %}not-favorite{% endif %}"
                     data-project-id="{{ project.id }}"
                     data-fav="{% if project in user.favorites.all %}true{% else %}false{% endif %}"
+                    data-toggle-url="{% url 'projects:toggle_favorite' project.id %}"
                     title="Добавить в избранное"
             >
                 {% include 'includes/svg/heart.html' %}

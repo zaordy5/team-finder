@@ -15,39 +15,41 @@
   <form method="post" class="project-create-form">
     {% csrf_token %}
 
-    <div class="form-field">
-      {{ form.name.label_tag }}
-      {{ form.name }}
-    </div>
-
-    <div class="form-field">
-      {{ form.description.label_tag }}
-      {{ form.description }}
-    </div>
-
-    <div class="form-field">
-      {{ form.github_url.label_tag }}
-      {{ form.github_url }}
-    </div>
-
-    <div class="form-field">
-      {{ form.status.label_tag }}
-      {{ form.status }}
-    </div>
-
-    {% if form.errors %}
+    {% if form.non_field_errors %}
     <div class="form-errors">
-      {% for field, errors in form.errors.items %}
-      {% for error in errors %}
+      {% for error in form.non_field_errors %}
       <p>{{ error }}</p>
-      {% endfor %}
       {% endfor %}
     </div>
     {% endif %}
 
+    <div class="form-field{% if form.name.errors %} field-has-errors{% endif %}">
+      {{ form.name.label_tag }}
+      {{ form.name }}
+      {% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.description.errors %} field-has-errors{% endif %}">
+      {{ form.description.label_tag }}
+      {{ form.description }}
+      {% for error in form.description.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.github_url.errors %} field-has-errors{% endif %}">
+      {{ form.github_url.label_tag }}
+      {{ form.github_url }}
+      {% for error in form.github_url.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.status.errors %} field-has-errors{% endif %}">
+      {{ form.status.label_tag }}
+      {{ form.status }}
+      {% for error in form.status.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+
     <div class="form-actions">
-      <a href="/" class="cancel-button">Отмена</a>
-      <button type="submit" class="save-button">{% if is_edit %}Сохранить{% else %}Опубликовать{% endif %}</button>
+      <a href="{% if is_edit and object %}{% url 'projects:detail' object.id %}{% else %}{% url 'projects:list' %}{% endif %}" class="cancel-button">Отмена</a>
+      <button type="submit" class="save-button">{% if is_edit %}Сохранить изменения{% else %}Опубликовать{% endif %}</button>
     </div>
   </form>
 </div>

@@ -63,11 +63,13 @@ def add_user_skill(request: HttpRequest, pk: int | None = None) -> JsonResponse:
     if added:
         profile_user.skills.add(skill)
     return JsonResponse({
+        "status": "ok",
         "skill_id": skill.id,
         "created": created,
         "added": added,
         "id": skill.id,
         "name": skill.name,
+        "message": "Навык добавлен." if added else "Такой навык уже есть в профиле.",
     })
 
 
@@ -78,8 +80,10 @@ def remove_user_skill(request: HttpRequest, skill_id: int, pk: int | None = None
     if profile_user != request.user:
         return JsonResponse({"status": "error", "message": "Недостаточно прав."}, status=403)
     skill = get_object_or_404(Skill, pk=skill_id)
+    if not profile_user.skills.filter(pk=skill.pk).exists():
+        return JsonResponse({"status": "error", "message": "У пользователя нет такого навыка."}, status=400)
     profile_user.skills.remove(skill)
-    return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "ok", "message": "Навык удалён.", "skill_id": skill.pk})
 
 
 @require_GET

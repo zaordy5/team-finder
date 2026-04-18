@@ -11,14 +11,38 @@ class UserAdmin(DjangoUserAdmin):
     add_form = AdminUserCreationForm
     form = AdminUserChangeForm
     model = User
-    list_display = ("email", "name", "surname", "is_staff", "is_active", "date_joined")
-    list_filter = ("is_staff", "is_superuser", "is_active")
+    list_display = (
+        "email",
+        "name",
+        "surname",
+        "phone",
+        "is_staff",
+        "is_active",
+        "date_joined",
+    )
+    list_filter = ("is_staff", "is_superuser", "is_active", "date_joined")
     ordering = ("-date_joined",)
-    search_fields = ("email", "name", "surname")
+    search_fields = ("email", "name", "surname", "phone", "github_url")
+    list_per_page = 25
+    readonly_fields = ("last_login", "date_joined")
+    filter_horizontal = ("groups", "user_permissions", "skills")
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        (_("Personal info"), {"fields": ("name", "surname", "about", "phone", "github_url", "avatar", "skills")}),
+        (
+            _("Personal info"),
+            {
+                "fields": (
+                    "name",
+                    "surname",
+                    "about",
+                    "phone",
+                    "github_url",
+                    "avatar",
+                    "skills",
+                )
+            },
+        ),
         (
             _("Permissions"),
             {
@@ -38,7 +62,15 @@ class UserAdmin(DjangoUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "name", "surname", "password1", "password2", "is_staff", "is_active"),
+                "fields": (
+                    "email",
+                    "name",
+                    "surname",
+                    "password1",
+                    "password2",
+                    "is_staff",
+                    "is_active",
+                ),
             },
         ),
     )

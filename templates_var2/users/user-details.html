@@ -40,9 +40,9 @@
     <div class="project-skills">
         <h3>Навыки</h3>
         <div id="skills-container" class="skills-container"
-             data-search-url="/users/skills/"
-             data-add-url="/users/skills/add/"
-             data-remove-url-template="/users/skills/__ID__/remove/">
+             data-search-url="{% url 'users:skill_lookup' %}"
+             data-add-url="{% url 'users:add_skill' %}"
+             data-remove-url-template="{% url 'users:detail' user.id %}skills/__ID__/remove/">
             {% for skill in user.skills.all %}
                 <span class="skill-chip" data-id="{{ skill.id }}">
                     {{ skill.name }}

@@ -2,7 +2,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from projects.models import Project, Skill
-from users.forms import ProjectForm, UserProfileForm
+from users.forms import ProjectForm, UserProfileForm, UserRegistrationForm
 from users.models import User
 
 
@@ -231,3 +231,58 @@ class TeamFinderSmokeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         participants = list(response.context["participants"])
         self.assertEqual(participants, [self.member])
+
+
+    def test_registration_form_normalizes_email_and_rejects_duplicate(self):
+        form = UserRegistrationForm(
+            data={
+                "name": "  Anna ",
+                "surname": "  Ivanova ",
+                "email": " NEWUSER@EXAMPLE.COM ",
+                "password": "StrongPass123",
+            }
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertEqual(user.email, "newuser@example.com")
+        self.assertEqual(user.name, "Anna")
+        self.assertEqual(user.surname, "Ivanova")
+
+        duplicate_form = UserRegistrationForm(
+            data={
+                "name": "New",
+                "surname": "User",
+                "email": "OWNER@EXAMPLE.COM",
+                "password": "StrongPass123",
+            }
+        )
+        self.assertFalse(duplicate_form.is_valid())
+        self.assertIn("email", duplicate_form.errors)
+
+    def test_profile_form_rejects_invalid_phone_and_scheme(self):
+        form = UserProfileForm(
+            data={
+                "name": self.owner.name,
+                "surname": self.owner.surname,
+                "about": "about",
+                "phone": "12345",
+                "github_url": "ftp://github.com/example",
+            },
+            instance=self.owner,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("phone", form.errors)
+        self.assertIn("github_url", form.errors)
+
+    def test_project_form_trims_name_and_description(self):
+        form = ProjectForm(
+            data={
+                "name": "   Demo name   ",
+                "description": "   demo description   ",
+                "github_url": "https://github.com/example/repo",
+                "status": Project.STATUS_OPEN,
+            }
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["name"], "Demo name")
+        self.assertEqual(form.cleaned_data["description"], "demo description")
