@@ -155,7 +155,7 @@ class UserListView(ListView):
             owner_ids = user.favorites.values_list("owner_id", flat=True)
             return queryset.filter(id__in=owner_ids)
         if filter_name == "owners-of-participating-projects":
-            owner_ids = user.participated_projects.values_list("owner_id", flat=True)
+            owner_ids = user.participating_projects.values_list("owner_id", flat=True)
             return queryset.filter(id__in=owner_ids)
         if filter_name == "interested-in-my-projects":
             user_ids = User.objects.filter(favorites__owner=user).values_list("id", flat=True)

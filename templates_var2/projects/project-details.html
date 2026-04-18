@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ project.title }}{% endblock %}
+{% block title %}{{ project.name }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/project_details.css' %}">
@@ -12,7 +12,7 @@
 <div class="project-container">
     <div class="project-card">
         <div class="project-card-header">
-            <a href="/users/{{ project.owner.id }}/">
+            <a href="{% url 'users:detail' project.owner.id %}">
                 <div class="project-card-header-left">
                     {% if project.owner.avatar %}
                         <img src="{{ project.owner.avatar.url }}" alt="Аватар автора" class="project-author-avatar">
@@ -60,11 +60,11 @@
         <div class="project-actions">
             <a href="#"
                class="black-button black-button-share share-button"
-               data-url="/projects/{{ project.id }}">
+               data-url="{% url 'projects:detail' project.id %}">
                 {% include 'includes/svg/share.html' %}
             </a>
             {% if user.id == project.owner.id %}
-                <a href="/projects/{{ project.id }}/edit/" class="black-button">
+                <a href="{% url 'projects:edit' project.id %}" class="black-button">
                     {% include 'includes/svg/pen.html' %}
                     Редактировать
                 </a>
@@ -97,7 +97,7 @@
     <h3>Участники проекта (<span id="participants-count" style="display:inline">{{ project.participants.all|length }}</span>)</h3>
     <div id="participants-list" class="participants-list">
         {% for member in project.participants.all %}
-        <a href="/users/{{ member.id }}/" id="participant-{{ member.id }}">
+        <a href="{% url 'users:detail' member.id %}" id="participant-{{ member.id }}">
             <div class="participant-item">
                 {% if member.avatar %}
                     <img src="{{ member.avatar.url }}" alt="Аватар" class="participant-avatar">

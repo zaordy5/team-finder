@@ -10,7 +10,7 @@
                     <img src="{% static 'images/default-avatar.png' %}" alt="Аватар по умолчанию" class="avatar">
                 {% endif %}
                 <div class="project-owner">
-                    <a href="/users/{{ project.owner.id }}">{{ project.owner.name }} {{ project.owner.surname }}</a>
+                    <a href="{% url 'users:detail' project.owner.id %}">{{ project.owner.name }} {{ project.owner.surname }}</a>
                     <small class="project-date">{{ project.created_at|date:"d.m.Y" }}</small>
                 </div>
             </div>
@@ -26,7 +26,7 @@
             {% endif %}
         </div>
 
-        <h3 class="project-card-title"><a href="/projects/{{ project.id }}">{{ project.name }}</a></h3>
+        <h3 class="project-card-title"><a href="{% url 'projects:detail' project.id %}">{{ project.name }}</a></h3>
     </div>
 
     <p class="project-card-description">{{ project.description|truncatechars:150 }}</p>

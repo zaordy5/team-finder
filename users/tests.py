@@ -1,4 +1,5 @@
 from django.test import Client, TestCase
+from django.urls import reverse
 
 from projects.models import Project, Skill
 from users.forms import ProjectForm, UserProfileForm
@@ -19,6 +20,18 @@ class TeamFinderSmokeTests(TestCase):
             name="Member",
             surname="User",
         )
+        self.other_owner = User.objects.create_user(
+            email="other-owner@example.com",
+            password="StrongPass123",
+            name="Other",
+            surname="Owner",
+        )
+        self.fan = User.objects.create_user(
+            email="fan@example.com",
+            password="StrongPass123",
+            name="Fan",
+            surname="User",
+        )
         self.skill = Skill.objects.create(name="Django")
         self.project = Project.objects.create(
             owner=self.owner,
@@ -26,6 +39,12 @@ class TeamFinderSmokeTests(TestCase):
             description="Описание",
         )
         self.project.participants.add(self.owner)
+        self.second_project = Project.objects.create(
+            owner=self.other_owner,
+            name="Second project",
+            description="Второй проект",
+        )
+        self.second_project.participants.add(self.other_owner)
         self.client = Client()
 
     def test_public_pages_render(self):
@@ -42,6 +61,20 @@ class TeamFinderSmokeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.wsgi_request.user.is_authenticated)
 
+    def test_registration_redirects_to_login_and_creates_user(self):
+        response = self.client.post(
+            reverse("users:register"),
+            {
+                "name": "Anna",
+                "surname": "Ivanova",
+                "email": "anna-new@example.com",
+                "password": "StrongPass123",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("users:login"), fetch_redirect_response=False)
+        self.assertTrue(User.objects.filter(email="anna-new@example.com").exists())
+
     def test_toggle_favorite_requires_login_and_works(self):
         response = self.client.post(f"/projects/{self.project.pk}/toggle-favorite/")
         self.assertEqual(response.status_code, 302)
@@ -51,6 +84,17 @@ class TeamFinderSmokeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["favorited"])
         self.assertTrue(self.member.favorites.filter(pk=self.project.pk).exists())
+
+    def test_favorite_projects_page_shows_only_user_favorites(self):
+        self.member.favorites.add(self.project)
+        self.client.force_login(self.member)
+
+        response = self.client.get(reverse("projects:favorites"))
+
+        self.assertEqual(response.status_code, 200)
+        page_projects = list(response.context["projects"])
+        self.assertIn(self.project, page_projects)
+        self.assertNotIn(self.second_project, page_projects)
 
     def test_owner_can_add_skill_to_project(self):
         self.client.force_login(self.owner)
@@ -112,6 +156,33 @@ class TeamFinderSmokeTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("github_url", form.errors)
 
+    def test_change_password_updates_credentials(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("users:change_password"),
+            {
+                "old_password": "StrongPass123",
+                "new_password1": "NewStrongPass456",
+                "new_password2": "NewStrongPass456",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse("users:detail", kwargs={"pk": self.owner.pk}),
+            fetch_redirect_response=False,
+        )
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.check_password("NewStrongPass456"))
+
+        self.client.logout()
+        login_response = self.client.post(
+            reverse("users:login"),
+            {"email": self.owner.email, "password": "NewStrongPass456"},
+            follow=True,
+        )
+        self.assertTrue(login_response.wsgi_request.user.is_authenticated)
+
     def test_user_avatar_is_generated_automatically(self):
         user = User.objects.create_user(
             email="avatar@example.com",
@@ -120,3 +191,43 @@ class TeamFinderSmokeTests(TestCase):
             surname="Tester",
         )
         self.assertTrue(bool(user.avatar))
+
+    def test_filter_owners_of_favorite_projects(self):
+        self.member.favorites.add(self.second_project)
+        self.client.force_login(self.member)
+
+        response = self.client.get(reverse("users:list"), {"filter": "owners-of-favorite-projects"})
+
+        self.assertEqual(response.status_code, 200)
+        participants = list(response.context["participants"])
+        self.assertEqual(participants, [self.other_owner])
+
+    def test_filter_owners_of_participating_projects(self):
+        self.second_project.participants.add(self.member)
+        self.client.force_login(self.member)
+
+        response = self.client.get(reverse("users:list"), {"filter": "owners-of-participating-projects"})
+
+        self.assertEqual(response.status_code, 200)
+        participants = list(response.context["participants"])
+        self.assertEqual(participants, [self.other_owner])
+
+    def test_filter_interested_in_my_projects(self):
+        self.fan.favorites.add(self.project)
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("users:list"), {"filter": "interested-in-my-projects"})
+
+        self.assertEqual(response.status_code, 200)
+        participants = list(response.context["participants"])
+        self.assertEqual(participants, [self.fan])
+
+    def test_filter_participants_of_my_projects(self):
+        self.project.participants.add(self.member)
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("users:list"), {"filter": "participants-of-my-projects"})
+
+        self.assertEqual(response.status_code, 200)
+        participants = list(response.context["participants"])
+        self.assertEqual(participants, [self.member])

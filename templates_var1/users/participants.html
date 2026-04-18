@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="{% static 'css/participants.css' %}">
 {% endblock %}
 
+{% url 'users:list' as users_list_url %}
+
 {% block content %}
 <div class="project-container">
     <div class="project-header">
@@ -26,7 +28,7 @@
                 <a href="?filter=interested-in-my-projects" class="filter-chip {% if active_filter == 'interested-in-my-projects' %}active{% endif %}">Пользователи, которым нравятся мои проекты</a>
                 <a href="?filter=participants-of-my-projects" class="filter-chip {% if active_filter == 'participants-of-my-projects' %}active{% endif %}">Участники моих проектов</a>
                 {% if active_filter %}
-                <a href="/users/list/" class="filter-reset">Сбросить</a>
+                <a href="{% url 'users:list' %}" class="filter-reset">Сбросить</a>
                 {% endif %}
             </div>
         </div>
@@ -48,13 +50,13 @@
                 <p class="participant-role">{{ participant.about|default:"Пользователь пока не добавил описание."|truncatechars:80 }}</p>
             </div>
             <div class="participant-card-footer">
-                <a href="/users/{{ participant.id }}/" class="white-button">{% include 'includes/svg/eye.html' %} Посмотреть контакты</a>
+                <a href="{% url 'users:detail' participant.id %}" class="white-button">{% include 'includes/svg/eye.html' %} Посмотреть контакты</a>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    {% include 'includes/empty-project-card.html' with empty_title="Пока нет участников" empty_message="Попробуйте сбросить фильтр" button_link="/users/list/" button_text="Сбросить" %}
+    {% include 'includes/empty-project-card.html' with empty_title="Пока нет участников" empty_message="Попробуйте сбросить фильтр" button_link=users_list_url button_text="Сбросить" %}
     {% endif %}
 
     {% include 'includes/pagination.html' %}
