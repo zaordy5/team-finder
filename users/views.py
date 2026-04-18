@@ -161,7 +161,7 @@ class UserListView(ListView):
             user_ids = User.objects.filter(favorites__owner=user).values_list("id", flat=True)
             return queryset.filter(id__in=user_ids).exclude(id=user.id)
         if filter_name == "participants-of-my-projects":
-            user_ids = User.objects.filter(participated_projects__owner=user).values_list("id", flat=True)
+            user_ids = User.objects.filter(participating_projects__owner=user).values_list("id", flat=True)
             return queryset.filter(id__in=user_ids).exclude(id=user.id)
         return queryset
 
