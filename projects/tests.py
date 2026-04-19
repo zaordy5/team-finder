@@ -36,15 +36,32 @@ class BaseProjectTestCase(TestCase):
 
 
 class ProjectActionServiceTests(BaseProjectTestCase):
-    def test_toggle_project_favorite_returns_message_and_updates_state(self):
-        payload = toggle_project_favorite(self.member, self.project)
-        self.assertTrue(payload["favorited"])
-        self.assertIn("избранное", payload["message"].lower())
-        self.assertTrue(self.member.favorites.filter(pk=self.project.pk).exists())
+    def test_toggle_project_favorite_updates_state(self):
+        payload = toggle_project_favorite(self.user, self.project)
 
-        payload = toggle_project_favorite(self.member, self.project)
-        self.assertFalse(payload["favorited"])
-        self.assertFalse(self.member.favorites.filter(pk=self.project.pk).exists())
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.favorites.filter(pk=self.project.pk).exists())
+        self.assertEqual(
+            payload,
+            {
+                "status": "ok",
+                "favorited": True,
+                "favorite": True,
+            },
+        )
+
+        payload = toggle_project_favorite(self.user, self.project)
+
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.favorites.filter(pk=self.project.pk).exists())
+        self.assertEqual(
+            payload,
+            {
+                "status": "ok",
+                "favorited": False,
+                "favorite": False,
+            },
+        )
 
     def test_owner_cannot_toggle_participation_for_own_project(self):
         with self.assertRaises(ProjectActionError) as exc:
