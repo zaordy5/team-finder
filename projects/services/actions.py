@@ -21,7 +21,6 @@ def toggle_project_favorite(user: User, project: Project) -> dict:
             'status': 'ok',
             'favorited': False,
             'favorite': False,
-            'message': 'Проект удалён из избранного.',
         }
 
     user.favorites.add(project)
@@ -29,7 +28,6 @@ def toggle_project_favorite(user: User, project: Project) -> dict:
         'status': 'ok',
         'favorited': True,
         'favorite': True,
-        'message': 'Проект добавлен в избранное.',
     }
 
 
@@ -110,6 +108,4 @@ def remove_skill_from_project(user: User, project: Project, skill: Skill) -> dic
     project.skills.remove(skill)
     return {
         'status': 'ok',
-        'skill_id': skill.pk,
-        'message': 'Навык удалён.',
     }
