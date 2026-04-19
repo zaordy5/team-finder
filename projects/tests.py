@@ -37,10 +37,10 @@ class BaseProjectTestCase(TestCase):
 
 class ProjectActionServiceTests(BaseProjectTestCase):
     def test_toggle_project_favorite_updates_state(self):
-        payload = toggle_project_favorite(self.user, self.project)
+        payload = toggle_project_favorite(self.member, self.project)
 
-        self.user.refresh_from_db()
-        self.assertTrue(self.user.favorites.filter(pk=self.project.pk).exists())
+        self.member.refresh_from_db()
+        self.assertTrue(self.member.favorites.filter(pk=self.project.pk).exists())
         self.assertEqual(
             payload,
             {
@@ -50,10 +50,10 @@ class ProjectActionServiceTests(BaseProjectTestCase):
             },
         )
 
-        payload = toggle_project_favorite(self.user, self.project)
+        payload = toggle_project_favorite(self.member, self.project)
 
-        self.user.refresh_from_db()
-        self.assertFalse(self.user.favorites.filter(pk=self.project.pk).exists())
+        self.member.refresh_from_db()
+        self.assertFalse(self.member.favorites.filter(pk=self.project.pk).exists())
         self.assertEqual(
             payload,
             {
