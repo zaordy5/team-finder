@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponseForbidden, JsonResponse
@@ -15,8 +14,6 @@ from .services import remove_skill_from_project
 from .services import toggle_project_favorite
 from .services import toggle_project_participation
 
-
-TASK_VERSION = str(getattr(settings, 'TASK_VERSION', '1'))
 
 
 def _query_without_page(request: HttpRequest) -> str:
@@ -53,7 +50,6 @@ class ProjectListView(ListView):
         context['active_skill'] = self.request.GET.get('skill', '').strip()
         context['all_skills'] = Skill.objects.filter(projects__isnull=False).distinct().order_by('name')
         context['query_without_page'] = _query_without_page(self.request)
-        context['task_version'] = TASK_VERSION
         return context
 
 

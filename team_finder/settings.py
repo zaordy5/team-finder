@@ -6,8 +6,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("DJANGO_SECRET_KEY", default="django-insecure-dev-key-change-me")
 DEBUG = config("DJANGO_DEBUG", default=True, cast=bool)
-TASK_VERSION = str(config("TASK_VERSION", default="1"))
-
 ALLOWED_HOSTS = [
     host.strip()
     for host in config("DJANGO_ALLOWED_HOSTS", default="127.0.0.1,localhost,0.0.0.0,testserver").split(",")
@@ -40,7 +38,7 @@ ROOT_URLCONF = "team_finder.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / f"templates_var{TASK_VERSION}"],
+        "DIRS": [BASE_DIR / "templates_var1"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

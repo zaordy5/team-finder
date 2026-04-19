@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -14,8 +13,6 @@ from team_finder.helpers import resolve_skill_from_request
 from .forms import EmailAuthenticationForm, UserProfileForm, UserRegistrationForm
 from .models import User
 
-
-TASK_VERSION = str(getattr(settings, "TASK_VERSION", "1"))
 
 
 def _query_without_page(request: HttpRequest) -> str:
@@ -175,5 +172,4 @@ class UserListView(ListView):
         context["active_skill"] = self.request.GET.get("skill", "").strip()
         context["all_skills"] = Skill.objects.filter(users__isnull=False).distinct().order_by("name")
         context["query_without_page"] = _query_without_page(self.request)
-        context["task_version"] = TASK_VERSION
         return context
