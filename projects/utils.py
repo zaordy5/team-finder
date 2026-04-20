@@ -3,7 +3,7 @@ import json
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
 
-from projects.models import Skill
+from .models import Skill
 
 
 def get_request_payload(request: HttpRequest) -> dict:

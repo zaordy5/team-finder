@@ -8,7 +8,10 @@ SECRET_KEY = config("DJANGO_SECRET_KEY", default="django-insecure-dev-key-change
 DEBUG = config("DJANGO_DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = [
     host.strip()
-    for host in config("DJANGO_ALLOWED_HOSTS", default="127.0.0.1,localhost,0.0.0.0,testserver").split(",")
+    for host in config(
+        "DJANGO_ALLOWED_HOSTS",
+        default="127.0.0.1,localhost,0.0.0.0,testserver",
+    ).split(",")
     if host.strip()
 ]
 
@@ -52,24 +55,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "team_finder.wsgi.application"
 
-if config("POSTGRES_DB", default=""):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": config("POSTGRES_DB"),
-            "USER": config("POSTGRES_USER"),
-            "PASSWORD": config("POSTGRES_PASSWORD"),
-            "HOST": config("POSTGRES_HOST", default="localhost"),
-            "PORT": config("POSTGRES_PORT", default=5432, cast=int),
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config("POSTGRES_DB"),
+        "USER": config("POSTGRES_USER"),
+        "PASSWORD": config("POSTGRES_PASSWORD"),
+        "HOST": config("POSTGRES_HOST", default="localhost"),
+        "PORT": config("POSTGRES_PORT", default=5432, cast=int),
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+}
 
 AUTH_PASSWORD_VALIDATORS = []
 if not DEBUG:

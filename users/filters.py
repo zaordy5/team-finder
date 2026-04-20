@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from django.db.models import QuerySet
 
-from users.models import User
+from .models import User
 
 
 VARIANT_ONE_FILTERS = {
@@ -13,7 +11,11 @@ VARIANT_ONE_FILTERS = {
 }
 
 
-def apply_variant_one_filter(queryset: QuerySet[User], current_user: User, filter_name: str) -> QuerySet[User]:
+def apply_variant_one_filter(
+    queryset: QuerySet[User],
+    current_user: User,
+    filter_name: str,
+) -> QuerySet[User]:
     if filter_name not in VARIANT_ONE_FILTERS:
         return queryset
 
