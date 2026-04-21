@@ -5,16 +5,48 @@ on:
   pull_request:
 
 jobs:
-  test:
+  django-check:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: team_finder
+          POSTGRES_USER: team_finder
+          POSTGRES_PASSWORD: team_finder
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U team_finder -d team_finder"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SECRET_KEY: ci-secret-key
+      DJANGO_DEBUG: 'True'
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
+      POSTGRES_DB: team_finder
+      POSTGRES_USER: team_finder
+      POSTGRES_PASSWORD: team_finder
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Run tests
-        run: python manage.py test
+
+      - name: Apply migrations
+        run: python manage.py migrate --noinput
+
+      - name: Run Django system checks
+        run: python manage.py check
