@@ -8,12 +8,15 @@ from django.db import models
 
 from .managers import UserManager
 
+
 USER_NAME_MAX_LENGTH = 124
 USER_ABOUT_MAX_LENGTH = 256
 USER_PHONE_MAX_LENGTH = 12
+
 AVATAR_IMAGE_SIZE = 256
 AVATAR_FONT_SIZE = 110
 AVATAR_VERTICAL_OFFSET = 10
+
 AVATAR_COLORS = [
     "#5B8DEF",
     "#6C9E6E",
@@ -42,13 +45,13 @@ def _generate_avatar_image(letter: str, color: str) -> bytes:
         (AVATAR_IMAGE_SIZE - text_height) / 2 - AVATAR_VERTICAL_OFFSET,
     )
     draw.text(position, letter, fill="white", font=font)
+
     buffer = BytesIO()
     image.save(buffer, format="PNG")
     return buffer.getvalue()
 
 
 class User(AbstractUser):
-    username = None
     email = models.EmailField("Email", unique=True)
     name = models.CharField("Имя", max_length=USER_NAME_MAX_LENGTH)
     surname = models.CharField("Фамилия", max_length=USER_NAME_MAX_LENGTH)
@@ -69,6 +72,8 @@ class User(AbstractUser):
         blank=True,
     )
 
+    username = None
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name", "surname"]
 
@@ -79,22 +84,23 @@ class User(AbstractUser):
         verbose_name = "пользователь"
         verbose_name_plural = "пользователи"
 
-    def __str__(self):
+    def __str__(self) -> str:
         full_name = f"{self.name} {self.surname}".strip()
         return full_name or self.email
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return f"/users/{self.pk}/"
 
-    def _ensure_avatar(self):
+    def save(self, *args, **kwargs):
+        self._ensure_avatar()
+        super().save(*args, **kwargs)
+
+    def _ensure_avatar(self) -> None:
         if self.avatar:
             return
+
         initial = (self.name[:1] or self.email[:1] or "?").upper()
         color = _pick_avatar_color(self.email or self.name)
         image_content = _generate_avatar_image(initial, color)
         filename = f"avatar_{uuid4()}.png"
         self.avatar.save(filename, ContentFile(image_content), save=False)
-
-    def save(self, *args, **kwargs):
-        self._ensure_avatar()
-        super().save(*args, **kwargs)
