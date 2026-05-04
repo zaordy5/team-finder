@@ -4,28 +4,30 @@
 {% block title %}Избранное{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/project_list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_list.css' %}">
 {% endblock %}
 
 {% url 'projects:list' as projects_list_url %}
 
 {% block page_id %}favorites{% endblock %}
+
 {% block content %}
-<div class="project-container">
-    <div class="project-header">
-        <h2 class="project-title">Избранные проекты</h2>
-    </div>
-    <p class="project-subtitle">Проекты, которые вас заинтересовали</p>
+    <div class="project-container">
+        <div class="project-header">
+            <h2 class="project-title">Избранные проекты</h2>
+        </div>
 
-    <div class="projects-grid">
-        {% for project in projects %}
-        {% include 'includes/project-card.html' %}
-        {% empty %}
-        {% include 'includes/empty-project-card.html' with empty_title="Пока нет избранных проектов" empty_message="Добавляйте проекты в избранное, чтобы не потерять их" button_link=projects_list_url button_text="Посмотреть проекты" %}
-        {% endfor %}
-    </div>
+        <p class="project-subtitle">Проекты, которые вас заинтересовали</p>
 
-    {% include 'includes/pagination.html' %}
-    {% include 'includes/project-fav-toggle.js' %}
-</div>
+        <div class="projects-grid">
+            {% for project in projects %}
+                {% include 'includes/project-card.html' %}
+            {% empty %}
+                {% include 'includes/empty-project-card.html' with empty_title="Пока нет избранных проектов" empty_message="Добавляйте проекты в избранное, чтобы не потерять их" button_link=projects_list_url button_text="Посмотреть проекты" %}
+            {% endfor %}
+        </div>
+
+        {% include 'includes/pagination.html' %}
+        {% include 'includes/project-fav-toggle.js' %}
+    </div>
 {% endblock %}

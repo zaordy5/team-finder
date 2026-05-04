@@ -15,7 +15,7 @@
     {% include 'includes/header.html' %}
 
     {% if messages %}
-        <!-- Сообщения Django показываются после действий пользователя: вход, регистрация, смена пароля. -->
+        <!-- Сообщения появляются после обычных действий: регистрация, вход, смена пароля. -->
         <div class="messages-container" style="max-width: 1200px; margin: 24px auto 0; padding: 0 16px;">
             {% for message in messages %}
                 <div

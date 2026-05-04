@@ -4,30 +4,32 @@
 {% block title %}Актуальные проекты{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/project_list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_list.css' %}">
 {% endblock %}
 
 {% url 'projects:create' as projects_create_url %}
 
 {% block content %}
-<div class="project-container">
-    <div class="project-header">
-        <h2 class="project-title">Актуальные проекты</h2>
-        {% if request.user.is_authenticated %}
-            <a href="{% url 'projects:create' %}" class="black-button">+ Создать проект</a>
-        {% endif %}
-    </div>
-    <p class="project-subtitle">Найдите интересный проект и присоединитесь к команде</p>
+    <div class="project-container">
+        <div class="project-header">
+            <h2 class="project-title">Актуальные проекты</h2>
 
-    <div class="projects-grid">
-        {% for project in projects %}
-        {% include 'includes/project-card.html' %}
-        {% empty %}
-        {% include 'includes/empty-project-card.html' with empty_title="Пока нет проектов" empty_message="Создавайте проекты и делитесь ими с другими пользователями!" button_link=projects_create_url button_text="+ Создать проект" %}
-        {% endfor %}
-    </div>
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'projects:create' %}" class="black-button">+ Создать проект</a>
+            {% endif %}
+        </div>
 
-    {% include 'includes/pagination.html' %}
-    {% include 'includes/project-fav-toggle.js' %}
-</div>
+        <p class="project-subtitle">Найдите интересный проект и присоединитесь к команде</p>
+
+        <div class="projects-grid">
+            {% for project in projects %}
+                {% include 'includes/project-card.html' %}
+            {% empty %}
+                {% include 'includes/empty-project-card.html' with empty_title="Пока нет проектов" empty_message="Создавайте проекты и делитесь ими с другими пользователями!" button_link=projects_create_url button_text="+ Создать проект" %}
+            {% endfor %}
+        </div>
+
+        {% include 'includes/pagination.html' %}
+        {% include 'includes/project-fav-toggle.js' %}
+    </div>
 {% endblock %}

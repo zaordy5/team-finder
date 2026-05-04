@@ -1,30 +1,10 @@
-// Global share button handler
-// Works for any element with class="share-button" and optional data-url attribute
-
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest(".share-button");
-  if (!btn) return;
-
-  e.preventDefault();
-
-  const url = btn.dataset.url
-    ? window.location.origin + btn.dataset.url
-    : window.location.href;
-
-  navigator.clipboard
-    .writeText(url)
-    .then(() => {
-      if (window.toast) {
-        window.toast("Ссылка скопирована: " + url, { type: 'info' });
-      } else {
-        alert("Ссылка скопирована: " + url);
-      }
-    })
-    .catch((err) => {
-      console.error("Ошибка копирования: ", err);
-      fallbackCopyTextToClipboard(url);
-    });
-});
+function showShareMessage(text) {
+  if (window.toast) {
+    window.toast(`Ссылка скопирована: ${text}`, { type: "info" });
+  } else {
+    alert(`Ссылка скопирована: ${text}`);
+  }
+}
 
 function fallbackCopyTextToClipboard(text) {
   try {
@@ -33,19 +13,44 @@ function fallbackCopyTextToClipboard(text) {
     textArea.setAttribute("readonly", "");
     textArea.style.position = "fixed";
     textArea.style.top = "-1000px";
+
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    const successful = document.execCommand("copy");
+
+    const isCopied = document.execCommand("copy");
     document.body.removeChild(textArea);
-    if (!successful) throw new Error("document.execCommand copy failed");
-    if (window.toast) {
-      window.toast("Ссылка скопирована: " + text, { type: 'info' });
-    } else {
-      alert("Ссылка скопирована: " + text);
+
+    if (!isCopied) {
+      throw new Error("document.execCommand copy failed");
     }
-  } catch (err) {
-    console.error("Ошибка копирования (fallback): ", err);
+
+    showShareMessage(text);
+  } catch (error) {
+    console.error("Ошибка копирования (fallback):", error);
     window.prompt("Скопируйте ссылку:", text);
   }
 }
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".share-button");
+
+  if (!button) {
+    return;
+  }
+
+  event.preventDefault();
+
+  // data-url хранит относительный адрес профиля или проекта.
+  const url = button.dataset.url
+    ? window.location.origin + button.dataset.url
+    : window.location.href;
+
+  navigator.clipboard
+    .writeText(url)
+    .then(() => showShareMessage(url))
+    .catch((error) => {
+      console.error("Ошибка копирования:", error);
+      fallbackCopyTextToClipboard(url);
+    });
+});

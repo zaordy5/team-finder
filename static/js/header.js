@@ -1,30 +1,34 @@
-// Header sidebar toggle logic
-(function(){
-  document.addEventListener("DOMContentLoaded", function() {
-    const userMenu = document.querySelector('.user-menu');
-    const sidebar = document.getElementById('userSidebar');
-    const overlay = document.getElementById('sidebarOverlay');
+(function () {
+  document.addEventListener("DOMContentLoaded", () => {
+    const userMenu = document.querySelector(".user-menu");
+    const sidebar = document.getElementById("userSidebar");
+    const overlay = document.getElementById("sidebarOverlay");
 
-    if (!userMenu || !sidebar || !overlay) return;
+    if (!userMenu || !sidebar || !overlay) {
+      return;
+    }
 
     function openSidebar() {
-      sidebar.classList.add('show');
-      overlay.classList.add('show');
+      sidebar.classList.add("show");
+      overlay.classList.add("show");
     }
 
     function closeSidebar() {
-      sidebar.classList.remove('show');
-      overlay.classList.remove('show');
+      sidebar.classList.remove("show");
+      overlay.classList.remove("show");
     }
 
-    userMenu.addEventListener('click', (e) => {
-      e.stopPropagation();
+    userMenu.addEventListener("click", (event) => {
+      event.stopPropagation();
       openSidebar();
     });
 
-    document.addEventListener('click', (e) => {
-      const isClickInside = sidebar.contains(e.target) || userMenu.contains(e.target);
-      if (!isClickInside && sidebar.classList.contains('show')) {
+    overlay.addEventListener("click", closeSidebar);
+
+    document.addEventListener("click", (event) => {
+      const isClickInside = sidebar.contains(event.target) || userMenu.contains(event.target);
+
+      if (!isClickInside && sidebar.classList.contains("show")) {
         closeSidebar();
       }
     });
