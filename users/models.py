@@ -30,13 +30,14 @@ AVATAR_COLORS = [
 def _pick_avatar_color(seed: str) -> str:
     if not seed:
         return AVATAR_COLORS[0]
-    return AVATAR_COLORS[sum(ord(ch) for ch in seed) % len(AVATAR_COLORS)]
+    return AVATAR_COLORS[sum(ord(char) for char in seed) % len(AVATAR_COLORS)]
 
 
 def _generate_avatar_image(letter: str, color: str) -> bytes:
     image = Image.new("RGB", (AVATAR_IMAGE_SIZE, AVATAR_IMAGE_SIZE), color)
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default(size=AVATAR_FONT_SIZE)
+
     bbox = draw.textbbox((0, 0), letter, font=font)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
@@ -44,6 +45,7 @@ def _generate_avatar_image(letter: str, color: str) -> bytes:
         (AVATAR_IMAGE_SIZE - text_width) / 2,
         (AVATAR_IMAGE_SIZE - text_height) / 2 - AVATAR_VERTICAL_OFFSET,
     )
+
     draw.text(position, letter, fill="white", font=font)
 
     buffer = BytesIO()
@@ -80,6 +82,7 @@ class User(AbstractUser):
     objects = UserManager()
 
     class Meta:
+        # В списках пользователей сначала показываем недавно зарегистрированных.
         ordering = ["-date_joined"]
         verbose_name = "пользователь"
         verbose_name_plural = "пользователи"
@@ -91,11 +94,12 @@ class User(AbstractUser):
     def get_absolute_url(self) -> str:
         return f"/users/{self.pk}/"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         self._ensure_avatar()
         super().save(*args, **kwargs)
 
     def _ensure_avatar(self) -> None:
+        # Если пользователь не загрузил аватар, создаём простой аватар с первой буквой.
         if self.avatar:
             return
 
@@ -103,4 +107,5 @@ class User(AbstractUser):
         color = _pick_avatar_color(self.email or self.name)
         image_content = _generate_avatar_image(initial, color)
         filename = f"avatar_{uuid4()}.png"
+
         self.avatar.save(filename, ContentFile(image_content), save=False)

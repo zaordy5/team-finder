@@ -8,14 +8,28 @@ from .models import Project, Skill
 from .utils import resolve_skill_from_request
 
 
+ActionPayload = dict[str, object]
+
+
 class ProjectActionError(Exception):
-    def __init__(self, message: str, status_code: HTTPStatus = HTTPStatus.BAD_REQUEST):
+    def __init__(
+        self,
+        message: str,
+        status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
+    ) -> None:
         super().__init__(message)
+        self.message = message
         self.status_code = status_code
 
 
-def toggle_project_favorite(user: User, project: Project) -> dict:
+def _check_project_owner(user: User, project: Project, message: str) -> None:
+    if project.owner_id != user.pk:
+        raise ProjectActionError(message, status_code=HTTPStatus.FORBIDDEN)
+
+
+def toggle_project_favorite(user: User, project: Project) -> ActionPayload:
     is_favorited = user.favorites.filter(pk=project.pk).exists()
+
     if is_favorited:
         user.favorites.remove(project)
         return {
@@ -32,13 +46,15 @@ def toggle_project_favorite(user: User, project: Project) -> dict:
     }
 
 
-def toggle_project_participation(user: User, project: Project) -> dict:
+def toggle_project_participation(user: User, project: Project) -> ActionPayload:
     if project.owner_id == user.pk:
         raise ProjectActionError("Автор проекта уже является участником.")
+
     if project.status == Project.Status.CLOSED:
         raise ProjectActionError("Нельзя присоединиться к закрытому проекту.")
 
     is_participant = project.participants.filter(pk=user.pk).exists()
+
     if is_participant:
         project.participants.remove(user)
         return {
@@ -55,12 +71,12 @@ def toggle_project_participation(user: User, project: Project) -> dict:
     }
 
 
-def complete_project_for_owner(user: User, project: Project) -> dict:
-    if project.owner_id != user.pk:
-        raise ProjectActionError(
-            "Недостаточно прав для завершения проекта.",
-            status_code=HTTPStatus.FORBIDDEN,
-        )
+def complete_project_for_owner(user: User, project: Project) -> ActionPayload:
+    _check_project_owner(
+        user,
+        project,
+        "Недостаточно прав для завершения проекта.",
+    )
 
     if project.status != Project.Status.OPEN:
         return {
@@ -69,8 +85,10 @@ def complete_project_for_owner(user: User, project: Project) -> dict:
             "message": "Проект уже закрыт.",
         }
 
+    # Закрываем проект только один раз, чтобы не делать лишних сохранений.
     project.status = Project.Status.CLOSED
     project.save(update_fields=["status", "updated_at"])
+
     return {
         "status": "ok",
         "project_status": Project.Status.CLOSED,
@@ -78,12 +96,16 @@ def complete_project_for_owner(user: User, project: Project) -> dict:
     }
 
 
-def add_skill_to_project(user: User, project: Project, request: HttpRequest) -> dict:
-    if project.owner_id != user.pk:
-        raise ProjectActionError(
-            "Недостаточно прав для изменения навыков проекта.",
-            status_code=HTTPStatus.FORBIDDEN,
-        )
+def add_skill_to_project(
+    user: User,
+    project: Project,
+    request: HttpRequest,
+) -> ActionPayload:
+    _check_project_owner(
+        user,
+        project,
+        "Недостаточно прав для изменения навыков проекта.",
+    )
 
     try:
         skill, created = resolve_skill_from_request(request)
@@ -94,6 +116,7 @@ def add_skill_to_project(user: User, project: Project, request: HttpRequest) -> 
     if added:
         project.skills.add(skill)
 
+    # В ответе оставлены id и skill_id: старый JS может использовать оба поля.
     return {
         "status": "ok",
         "skill_id": skill.id,
@@ -105,12 +128,16 @@ def add_skill_to_project(user: User, project: Project, request: HttpRequest) -> 
     }
 
 
-def remove_skill_from_project(user: User, project: Project, skill: Skill) -> dict:
-    if project.owner_id != user.pk:
-        raise ProjectActionError(
-            "Недостаточно прав для изменения навыков проекта.",
-            status_code=HTTPStatus.FORBIDDEN,
-        )
+def remove_skill_from_project(
+    user: User,
+    project: Project,
+    skill: Skill,
+) -> ActionPayload:
+    _check_project_owner(
+        user,
+        project,
+        "Недостаточно прав для изменения навыков проекта.",
+    )
 
     if not project.skills.filter(pk=skill.pk).exists():
         raise ProjectActionError("У проекта нет такого навыка.")

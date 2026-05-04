@@ -20,6 +20,21 @@ from .forms import EmailAuthenticationForm, UserProfileForm, UserRegistrationFor
 from .models import User
 
 
+def _json_error(message: str, status: HTTPStatus) -> JsonResponse:
+    return JsonResponse({"status": "error", "message": message}, status=status)
+
+
+def _get_profile_user(request: HttpRequest, pk: int | None) -> User:
+    return request.user if pk is None else get_object_or_404(User, pk=pk)
+
+
+def _check_profile_owner(request: HttpRequest, profile_user: User) -> JsonResponse | None:
+    if profile_user == request.user:
+        return None
+
+    return _json_error("Недостаточно прав.", HTTPStatus.FORBIDDEN)
+
+
 class RegisterView(FormView):
     template_name = "users/register.html"
     form_class = UserRegistrationForm
@@ -47,22 +62,21 @@ class LoginView(FormView):
 @login_required
 @require_POST
 def add_user_skill(request: HttpRequest, pk: int | None = None) -> JsonResponse:
-    profile_user = request.user if pk is None else get_object_or_404(User, pk=pk)
-    if profile_user != request.user:
-        return JsonResponse(
-            {"status": "error", "message": "Недостаточно прав."},
-            status=HTTPStatus.FORBIDDEN,
-        )
+    profile_user = _get_profile_user(request, pk)
+    permission_error = _check_profile_owner(request, profile_user)
+    if permission_error:
+        return permission_error
+
     try:
         skill, created = resolve_skill_from_request(request)
-    except ValueError as exc:
-        return JsonResponse(
-            {"status": "error", "message": str(exc)},
-            status=HTTPStatus.BAD_REQUEST,
-        )
+    except ValueError as error:
+        return _json_error(str(error), HTTPStatus.BAD_REQUEST)
+
     added = not profile_user.skills.filter(pk=skill.pk).exists()
     if added:
         profile_user.skills.add(skill)
+
+    # id и skill_id оставлены вместе, чтобы не ломать текущий JS.
     return JsonResponse(
         {
             "status": "ok",
@@ -78,33 +92,40 @@ def add_user_skill(request: HttpRequest, pk: int | None = None) -> JsonResponse:
 
 @login_required
 @require_POST
-def remove_user_skill(request: HttpRequest, skill_id: int, pk: int | None = None) -> JsonResponse:
-    profile_user = request.user if pk is None else get_object_or_404(User, pk=pk)
-    if profile_user != request.user:
-        return JsonResponse(
-            {"status": "error", "message": "Недостаточно прав."},
-            status=HTTPStatus.FORBIDDEN,
-        )
+def remove_user_skill(
+    request: HttpRequest,
+    skill_id: int,
+    pk: int | None = None,
+) -> JsonResponse:
+    profile_user = _get_profile_user(request, pk)
+    permission_error = _check_profile_owner(request, profile_user)
+    if permission_error:
+        return permission_error
+
     skill = get_object_or_404(Skill, pk=skill_id)
     if not profile_user.skills.filter(pk=skill.pk).exists():
-        return JsonResponse(
-            {"status": "error", "message": "У пользователя нет такого навыка."},
-            status=HTTPStatus.BAD_REQUEST,
-        )
+        return _json_error("У пользователя нет такого навыка.", HTTPStatus.BAD_REQUEST)
+
     profile_user.skills.remove(skill)
     return JsonResponse(
-        {"status": "ok", "message": "Навык удалён.", "skill_id": skill.pk}
+        {
+            "status": "ok",
+            "message": "Навык удалён.",
+            "skill_id": skill.pk,
+        }
     )
 
 
 @require_GET
 def skill_lookup(request: HttpRequest) -> JsonResponse:
     query = request.GET.get("q", "").strip()
+
     skills = Skill.objects.all()
     if query:
         skills = skills.filter(name__istartswith=query)
+
     payload = list(
-        skills.order_by("name").values("id", "name")[:SKILL_LOOKUP_LIMIT]
+        skills.order_by("name").values("id", "name")[:SKILL_LOOKUP_LIMIT],
     )
     return JsonResponse(payload, safe=False)
 
@@ -161,15 +182,28 @@ class UserListView(ListView):
         active_skill = self.request.GET.get("skill", "").strip()
 
         if self.request.user.is_authenticated and filter_name:
-            queryset = apply_variant_one_filter(queryset, self.request.user, filter_name)
+            queryset = apply_variant_one_filter(
+                queryset,
+                self.request.user,
+                filter_name,
+            )
+
         if active_skill:
             queryset = queryset.filter(skills__name__iexact=active_skill)
+
         return queryset.distinct().order_by("-date_joined")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Контекст нужен для активных фильтров и сохранения query-параметров при пагинации.
         context["active_filter"] = self.request.GET.get("filter", "")
         context["active_skill"] = self.request.GET.get("skill", "").strip()
-        context["all_skills"] = Skill.objects.filter(users__isnull=False).distinct().order_by("name")
+        context["all_skills"] = (
+            Skill.objects.filter(users__isnull=False)
+            .distinct()
+            .order_by("name")
+        )
         context["query_without_page"] = query_without_page(self.request)
+
         return context

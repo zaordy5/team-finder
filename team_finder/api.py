@@ -3,10 +3,17 @@ from http import HTTPStatus
 from django.http import JsonResponse
 
 
-def ok_response(*, status: HTTPStatus = HTTPStatus.OK, message: str | None = None, **payload) -> JsonResponse:
+def ok_response(
+    *,
+    status: HTTPStatus = HTTPStatus.OK,
+    message: str | None = None,
+    **payload,
+) -> JsonResponse:
     data = {"status": "ok", **payload}
+
     if message:
         data["message"] = message
+
     return JsonResponse(data, status=status)
 
 

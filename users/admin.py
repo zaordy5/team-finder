@@ -2,15 +2,19 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .forms import AdminUserCreationForm, AdminUserChangeForm
+from .forms import AdminUserChangeForm, AdminUserCreationForm
 from .models import User
+
+
+ADMIN_LIST_PER_PAGE = 25
 
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
-    add_form = AdminUserCreationForm
-    form = AdminUserChangeForm
     model = User
+    form = AdminUserChangeForm
+    add_form = AdminUserCreationForm
+
     list_display = (
         "email",
         "name",
@@ -20,10 +24,22 @@ class UserAdmin(DjangoUserAdmin):
         "is_active",
         "date_joined",
     )
-    list_filter = ("is_staff", "is_superuser", "is_active", "date_joined")
+    list_filter = (
+        "is_staff",
+        "is_superuser",
+        "is_active",
+        "date_joined",
+    )
+    search_fields = (
+        "email",
+        "name",
+        "surname",
+        "phone",
+        "github_url",
+    )
     ordering = ("-date_joined",)
-    search_fields = ("email", "name", "surname", "phone", "github_url")
-    list_per_page = 25
+    list_per_page = ADMIN_LIST_PER_PAGE
+
     readonly_fields = ("last_login", "date_joined")
     filter_horizontal = ("groups", "user_permissions", "skills")
 
@@ -40,7 +56,7 @@ class UserAdmin(DjangoUserAdmin):
                     "github_url",
                     "avatar",
                     "skills",
-                )
+                ),
             },
         ),
         (
@@ -52,16 +68,18 @@ class UserAdmin(DjangoUserAdmin):
                     "is_superuser",
                     "groups",
                     "user_permissions",
-                )
+                ),
             },
         ),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
+
     add_fieldsets = (
         (
             None,
             {
                 "classes": ("wide",),
+                # При создании пользователя в админке оставлены только основные поля.
                 "fields": (
                     "email",
                     "name",

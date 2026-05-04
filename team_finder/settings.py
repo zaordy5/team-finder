@@ -2,18 +2,22 @@ from pathlib import Path
 
 from decouple import config
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _split_csv(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
 
 SECRET_KEY = config("DJANGO_SECRET_KEY", default="django-insecure-dev-key-change-me")
 DEBUG = config("DJANGO_DEBUG", default=True, cast=bool)
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in config(
+ALLOWED_HOSTS = _split_csv(
+    config(
         "DJANGO_ALLOWED_HOSTS",
         default="127.0.0.1,localhost,0.0.0.0,testserver",
-    ).split(",")
-    if host.strip()
-]
+    )
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -41,6 +45,7 @@ ROOT_URLCONF = "team_finder.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
+        # Проект оставлен только под первый вариант задания.
         "DIRS": [BASE_DIR / "templates_var1"],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -67,6 +72,7 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = []
+
 if not DEBUG:
     AUTH_PASSWORD_VALIDATORS = [
         {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -88,9 +94,12 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 AUTH_USER_MODEL = "users.User"
 AUTHENTICATION_BACKENDS = ["users.backends.EmailBackend"]
+
 LOGIN_URL = "/users/login/"
 LOGIN_REDIRECT_URL = "/projects/list/"
 LOGOUT_REDIRECT_URL = "/projects/list/"
+
 APPEND_SLASH = True
