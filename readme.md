@@ -1,129 +1,196 @@
 # TeamFinder
 
-Итоговый Django-проект для поиска команды и совместной работы над pet-проектами.
+`Django / PostgreSQL / Docker`
 
-Проект собран под **вариант 1**: избранные проекты и фильтрация пользователей.
+Web application for finding teammates and organizing collaboration on pet projects.
 
-## Что реализовано
+TeamFinder allows users to create profiles, publish projects, join other teams, save projects to favorites and discover people based on their relationships with projects.
 
-- регистрация и вход по email;
-- публичные профили пользователей;
-- редактирование профиля и смена пароля;
-- список пользователей с пагинацией по 12 карточек;
-- список проектов с пагинацией по 12 карточек;
-- создание, редактирование и завершение проекта;
-- участие в чужих проектах;
-- добавление проектов в избранное и отдельная страница избранного;
-- фильтрация пользователей по связям с проектами;
-- PostgreSQL и запуск через Docker Compose;
-- демонстрационные данные;
-- админ-панель Django;
-- базовая проверка проекта через GitHub Actions.
-
-## Быстрый запуск через Docker
-
-### 1. Подготовить `.env`
-
-```bash
-cp .env_example .env
+```text
+backend       Python / Django
+database      PostgreSQL / Django ORM
+frontend      Django Templates / HTML / CSS
+infrastructure Docker / Docker Compose
+ci            GitHub Actions
 ```
 
-### 2. Запустить проект
+## Features
+
+### Users
+
+- email-based registration and authentication;
+- public user profiles;
+- profile editing;
+- password change;
+- paginated user directory;
+- project-based user filtering.
+
+### Projects
+
+- project creation and editing;
+- project completion workflow;
+- paginated project catalog;
+- project detail pages;
+- team participation;
+- favorite projects;
+- dedicated favorites page.
+
+### Discovery
+
+Users can be filtered based on their relationships with projects:
+
+- owners of favorite projects;
+- owners of projects the current user participates in;
+- users interested in the current user's projects;
+- participants of the current user's projects.
+
+### Administration
+
+The project includes the standard Django administration interface for managing application data.
+
+## Architecture
+
+The application is split into separate Django apps for users and projects.
+
+```text
+team-finder/
+├── projects/           project domain and business logic
+├── users/              authentication and user profiles
+├── team_finder/        Django project configuration
+├── static/             static assets
+├── media/              uploaded media
+├── .github/workflows/  CI configuration
+├── Dockerfile
+├── docker-compose.yml
+└── manage.py
+```
+
+Django ORM is used for data access and PostgreSQL is used as the primary database.
+
+## Quick Start
+
+The recommended way to run the application locally is Docker Compose.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/zaordy5/team-finder.git
+cd team-finder
+```
+
+### 2. Prepare environment variables
+
+```bash
+cp .env.example .env
+```
+
+Review `.env` and adjust the configuration if necessary.
+
+### 3. Start the application
 
 ```bash
 docker compose up --build
 ```
 
-После запуска проект будет доступен по адресу:
+After startup, the application is available at:
 
 ```text
 http://127.0.0.1:8000/projects/list/
 ```
 
-### 3. Остановить проект
+### 4. Stop the application
 
 ```bash
 docker compose down
 ```
 
-Если нужно удалить ещё и данные из volumes:
+To remove the associated Docker volumes as well:
 
 ```bash
 docker compose down -v
 ```
 
-## Тестовые аккаунты
+## Demo Data
 
-После первого запуска команда `seed_demo` автоматически создаёт пользователей, проекты, связи участия и избранное.
+The project includes the `seed_demo` management command that creates demonstration users, projects and relationships between them.
 
-Пароль для обычных пользователей:
+Demo users:
+
+```text
+anna@example.com
+misha@example.com
+olga@example.com
+```
+
+Default password for demo users:
 
 ```text
 Teamfinder123
 ```
 
-Обычные аккаунты:
+Demo credentials are intended for local development only.
 
-- `anna@example.com`
-- `misha@example.com`
-- `olga@example.com`
+To create an administrator account:
 
-Админ-панель:
+```bash
+python manage.py createsuperuser
+```
+
+The Django administration interface is available at:
 
 ```text
 http://127.0.0.1:8000/admin/
 ```
 
-Данные администратора:
+## Main Routes
 
-- email: `admin@teamfinder.local`
-- пароль: `Admin12345`
+```text
+/projects/list/         project catalog
+/projects/favorites/    favorite projects
+/projects/<id>/         project page
 
-## Основные страницы
+/users/list/            user directory
+/users/<id>/            user profile
+/users/register/        registration
+/users/login/           authentication
+/users/edit-profile/    profile editing
+/users/change-password/ password change
 
-- главная страница: `/projects/list/`
-- список пользователей: `/users/list/`
-- страница избранного: `/projects/favorites/`
-- страница пользователя: `/users/<id>/`
-- страница проекта: `/projects/<id>/`
-- регистрация: `/users/register/`
-- вход: `/users/login/`
-- редактирование профиля: `/users/edit-profile/`
-- смена пароля: `/users/change-password/`
-- админка: `/admin/`
+/admin/                 Django administration
+```
 
-## Основной сценарий проверки варианта 1
+## Main User Flows
 
-1. Войти под `anna@example.com` / `Teamfinder123`.
-2. Открыть `/projects/list/`.
-3. Добавить чужой проект в избранное.
-4. Открыть `/projects/favorites/` и проверить, что проект появился.
-5. Открыть чужой проект и присоединиться к нему.
-6. Открыть `/users/list/` и проверить 4 фильтра:
-   - `owners-of-favorite-projects`;
-   - `owners-of-participating-projects`;
-   - `interested-in-my-projects`;
-   - `participants-of-my-projects`.
-7. Открыть свой профиль и проверить редактирование профиля.
-8. Создать новый проект.
-9. Отредактировать созданный проект.
-10. Завершить созданный проект.
-11. Проверить работу админ-панели.
+### Project discovery
 
-## Локальный запуск без Docker
+1. Sign in.
+2. Browse the project catalog.
+3. Open a project.
+4. Add it to favorites or join the team.
+5. View related users through project-based filters.
 
-Для сдачи удобнее использовать Docker Compose, но проект можно запустить и локально, если PostgreSQL уже установлен.
+### Project management
 
-### 1. Создать виртуальное окружение
+1. Create a new project.
+2. Edit project information.
+3. Manage participation.
+4. Complete the project when work is finished.
+
+### User profile
+
+1. Open the personal profile.
+2. Update profile information.
+3. Browse projects associated with other users.
+4. Discover potential teammates.
+
+## Local Development
+
+The project can also run without Docker if PostgreSQL is already available locally.
+
+### 1. Create a virtual environment
 
 ```bash
 python -m venv .venv
-```
-
-Windows:
-
-```bash
-.venv\Scripts\activate
 ```
 
 Linux/macOS:
@@ -132,57 +199,94 @@ Linux/macOS:
 source .venv/bin/activate
 ```
 
-### 2. Установить зависимости
+Windows:
+
+```powershell
+.venv\Scripts\activate
+```
+
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Подготовить `.env`
+### 3. Prepare configuration
 
 ```bash
-cp .env_example .env
+cp .env.example .env
 ```
 
-Если PostgreSQL запускается локально вне Docker, в `.env` нужно указать свои параметры подключения.
+Configure the PostgreSQL connection in `.env`.
 
-### 4. Применить миграции и создать демо-данные
+### 4. Apply migrations
 
 ```bash
 python manage.py migrate
+```
+
+### 5. Create demo data
+
+```bash
 python manage.py seed_demo
 ```
 
-### 5. Запустить сервер
+### 6. Start the development server
 
 ```bash
 python manage.py runserver
 ```
 
-## Полезные команды
+## Development Commands
 
-Создать миграции после изменения моделей:
+Create migrations after model changes:
 
 ```bash
 python manage.py makemigrations
 ```
 
-Применить миграции:
+Apply migrations:
 
 ```bash
 python manage.py migrate
 ```
 
-Проверить конфигурацию Django:
+Validate Django configuration:
 
 ```bash
 python manage.py check
 ```
 
-## Технические детали
+Create an administrator:
 
-- Framework: Django 5
-- Database: PostgreSQL
-- Containerization: Docker Compose
-- Хранение данных БД: volume `postgres_data`
-- Хранение медиафайлов: volume `media_data`
+```bash
+python manage.py createsuperuser
+```
+
+## CI
+
+GitHub Actions is used for automated project checks.
+
+Workflow configuration is located in:
+
+```text
+.github/workflows/
+```
+
+## Tech Stack
+
+```text
+Python
+Django 5
+PostgreSQL
+Django ORM
+Docker
+Docker Compose
+GitHub Actions
+HTML
+CSS
+```
+
+## Status
+
+The core application functionality is implemented and the project is maintained as part of my backend development portfolio.
