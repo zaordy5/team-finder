@@ -45,7 +45,6 @@ ROOT_URLCONF = "team_finder.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # Проект оставлен только под первый вариант задания.
         "DIRS": [BASE_DIR / "templates_var1"],
         "APP_DIRS": True,
         "OPTIONS": {
